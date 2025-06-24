@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pariwisata Indonesia</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Font Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', Arial, sans-serif;
+      background-color: #D2B48C;
+    }
+
+    .page-title {
+      position: absolute;
+      width: 40%;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: #FFFFFF;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 20px;
+      font-weight: 700;
+      color: #000000;
+      text-align: center;
+    }
+
+    #controls {
+      position: absolute;
+      margin-right: 80px;
+      display: flex;
+      top: 120px;
+      right: 10px;
+      z-index: 1000;
+      background: #FFFFFF;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      width: 950px;
+      font-size: 15px;
+      box-sizing: border-box;
+      text-align: center;
+      align-items: center;
+      justify-content: space-around;
+    }
+
+    #controls label {
+      margin-right: 10px;
+      font-weight: 700;
+      color: #4B2E2E;
+      font-size: 15px;
+    }
+
+    #controls select, #controls button {
+      margin-right: 10px;
+      width: 230px;
+      background: #FFFFFF;
+      border: 1px solid #4B2E2E;
+      border-radius: 10px;
+      color: #4B2E2E;
+      font-weight: 500;
+      font-size: 15px;
+      padding: 5px 10px;
+      text-align: center;
+    }
+
+    .map-container {
+      position: absolute;
+      margin-left: 70px;
+      top: 120px;
+      left: 10px;
+      width: 50%;
+      height: 60vh;
+      background: #FFFFFF;
+      padding: 5px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      border-radius: 5px;
+    }
+
+    #infobox {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: #FFFFFF;
+      padding: 8px;
+      border-radius: 5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      min-width: 200px;
+      font-size: 14px;
+      pointer-events: none;
+      color: #000000;
+      font-weight: 500;
+    }
+
+    .chart-container {
+      position: absolute;
+      margin-right: 80px;
+      top: 200px;
+      right: 10px;
+      width: 40%;
+      height: 555px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+
+    .chart-container h3 {
+      margin-top: 0;
+      text-align: center;
+      font-size: 16px;
+      color: #4B2E2E;
+    }
+
+    #info-cards {
+      display: flex;
+      margin-top: 300px;
+      justify-content: center;
+      gap: 20px;
+      position: absolute;
+      top: 530px;
+      left: 10px;
+      z-index: 1000;
+      width: 50%;
+      margin-left: 70px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 20px 20px;
+      border-radius: 10px;
+      width: 230px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .card .label {
+      font-size: 17px;
+      color: #888;
+      text-align: center;
+    }
+
+    .card .value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #4B2E2E;
+      text-align: center;
+    }
+
+    .table-container {
+      position: absolute;
+      top: 800px;
+      right: 90px;
+      width: 40%;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      padding: 20px;
+      z-index: 999;
+    }
+
+    .table-container h3 {
+      text-align: center;
+      color: #4B2E2E;
+      margin-bottom: 10px;
+    }
+
+    #dataTable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    #dataTable thead {
+      background-color: #8B4513;
+      color: white;
+    }
+
+    #dataTable th, #dataTable td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    #dataTable tbody tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .pagination button {
+        padding: 6px 12px;
+        border: 1px solid #8B4513;
+        border-radius: 5px;
+        background-color: #fff;
+        color: #4B2E2E;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .pagination button.active {
+        background-color: #8B4513;
+        color: #fff;
+    }
+
+    .pagination button:disabled {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+  <h1 class="page-title">Dasbor Pariwisata Indonesia Terpadu: Peta Interaktif, Statistik Hotel, & Perjalanan</h1>
+
+  <div id="controls">
+    <div>
+        <label for="kategori">Kategori:</label>
+        <select id="kategori">
+          <option value="hotel_bintang">Hotel Bintang</option>
+          <option value="hotel_non_bintang">Hotel Non Bintang</option>
+          <option value="perjalanan_nusantara">Perjalanan Nusantara</option>
+          <option value="tingkat_hunian">Tingkat Hunian</option>
+        </select>
+    </div>
+    <div>
+        <label for="tahun">Tahun:</label>
+        <select id="tahun">
+          <option value="2021">2021</option>
+          <option value="2022">2022</option>
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+        </select>
+    </div>
+    <div>
+        <button id="btnUpdate">Tampilkan</button>
+    </div>
+  </div>
+
+  <div class="map-container">
+    <div id="map"></div>
+    <div id="infobox">Arahkan kursor ke provinsi</div>
+  </div>
+
+  <div id="info-cards">
+    <div class="card" id="card-tahun">
+      <div class="label">Tahun</div>
+      <div class="value">-</div>
+    </div>
+    <div class="card" id="card-kategori">
+      <div class="label">Kategori</div>
+      <div class="value">-</div>
+    </div>
+    <div class="card" id="card-provinsi">
+      <div class="label">Provinsi Tertinggi</div>
+      <div class="value">-</div>
+    </div>
+    <div class="card" id="card-nilai">
+      <div class="label">Nilai</div>
+      <div class="value">-</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <h3>Top 5 Provinsi Berdasarkan Data</h3>
+    <canvas id="barChart"></canvas>
+  </div>
+
+  <!-- Tambahkan ke dalam .table-container -->
+    <div class="table-container">
+    <table id="dataTable">
+        <thead></thead>
+        <tbody></tbody>
+    </table>
+    <div class="pagination" id="pagination"></div>
+    </div>
+
+
+  <!-- Script Section -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const map = L.map('map').setView([-2.5, 118], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const infoBox = document.getElementById('infobox');
+    let layers = [];
+    let barChart = null;
+
+    document.getElementById('btnUpdate').addEventListener('click', updateMap);
+
+    async function updateMap() {
+      layers.forEach(l => map.removeLayer(l));
+      layers = [];
+      infoBox.innerHTML = 'Arahkan kursor ke provinsi';
+
+      const kategori = document.getElementById('kategori').value;
+      const tahun = document.getElementById('tahun').value;
+
+      try {
+        const [geoData, statData] = await Promise.all([
+          fetch('http://localhost:3000/api/provinsi_geojson').then(r => r.json()),
+          fetch(`http://localhost:3000/api/${kategori}?tahun=${tahun}`).then(r => r.json())
+        ]);
+
+        const statMap = {};
+        statData.forEach(item => statMap[item.provinsi.toUpperCase()] = item);
+
+        geoData.forEach(item => {
+          const provKey = item.province.toUpperCase();
+          const s = statMap[provKey] || {};
+          const baseInfo = `<strong>${item.province}</strong><br><strong>Tahun:</strong> ${s.tahun || tahun}`;
+          let detail = '';
+          if (kategori.includes('hotel')) {
+            detail = `Akomodasi: ${s.akomodasi||'-'}<br>Kamar: ${s.kamar||'-'}<br>Tempat Tidur: ${s.tempat_tidur||'-'}`;
+          } else if (kategori === 'perjalanan_nusantara') {
+            detail = `Jumlah Perjalanan: ${s.jumlah_perjalanan||'-'}`;
+          } else if (kategori === 'tingkat_hunian') {
+            detail = `Hunian Bintang: ${s.hotel_berbintang||'-'}%<br>Non-Bintang: ${s.hotel_non_berbintang||'-'}%`;
+          }
+
+          const layer = L.geoJSON(item.geojson, {
+            style: { color: '#000', weight: 1, fillColor: '#8B4513', fillOpacity: 0.7 },
+            onEachFeature: (f, lyr) => {
+              lyr.on('mouseover', () => {
+                lyr.setStyle({ weight: 2, color: '#FFD700', fillOpacity: 0.9 });
+                infoBox.innerHTML = baseInfo + '<br>' + detail;
+              });
+              lyr.on('mouseout', () => {
+                lyr.setStyle({ color: '#000', weight: 1, fillColor: '#8B4513', fillOpacity: 0.7 });
+                infoBox.innerHTML = 'Arahkan kursor ke provinsi';
+              });
+            }
+          }).addTo(map);
+
+          layers.push(layer);
+        });
+
+        updateBarChart(statData, kategori, tahun);
+        updateTable(statData, kategori);
+      } catch (err) {
+        console.error('Error loading data:', err);
+      }
+    }
+
+    function updateBarChart(data, kategori, tahun) {
+      const ctx = document.getElementById('barChart').getContext('2d');
+
+      let chartData = [];
+      if (kategori.includes('hotel')) {
+        chartData = data.map(item => ({
+          provinsi: item.provinsi,
+          akomodasi: parseInt(item.akomodasi) || 0,
+          kamar: parseInt(item.kamar) || 0,
+          tempat_tidur: parseInt(item.tempat_tidur) || 0,
+          total: (parseInt(item.akomodasi) || 0) + (parseInt(item.kamar) || 0) + (parseInt(item.tempat_tidur) || 0)
+        }));
+      } else if (kategori === 'perjalanan_nusantara') {
+        chartData = data.map(item => ({
+          provinsi: item.provinsi,
+          jumlah_perjalanan: parseInt(item.jumlah_perjalanan) || 0,
+          total: parseInt(item.jumlah_perjalanan) || 0
+        }));
+      } else if (kategori === 'tingkat_hunian') {
+        chartData = data.map(item => ({
+          provinsi: item.provinsi,
+          hotel_berbintang: parseFloat(item.hotel_berbintang) || 0,
+          hotel_non_berbintang: parseFloat(item.hotel_non_berbintang) || 0,
+          total: (parseFloat(item.hotel_berbintang) || 0) + (parseFloat(item.hotel_non_berbintang) || 0)
+        }));
+      }
+
+      chartData.sort((a, b) => b.total - a.total);
+      const top5 = chartData.slice(0, 5);
+
+      document.getElementById("card-tahun").querySelector(".value").textContent = tahun;
+
+      const labelMap = {
+        hotel_bintang: "Hotel Bintang",
+        hotel_non_bintang: "Hotel Non-Bintang",
+        perjalanan_nusantara: "Perjalanan Nusantara",
+        tingkat_hunian: "Tingkat Hunian"
+      };
+
+      document.getElementById("card-kategori").querySelector(".value").textContent = labelMap[kategori] || kategori;
+      document.getElementById("card-provinsi").querySelector(".value").textContent = top5[0]?.provinsi || '-';
+
+      let nilaiInfo = '-';
+      if (kategori.includes("hotel")) {
+        nilaiInfo = `A: ${top5[0].akomodasi}, K: ${top5[0].kamar}, T: ${top5[0].tempat_tidur}`;
+      } else if (kategori === "perjalanan_nusantara") {
+        nilaiInfo = `${top5[0].jumlah_perjalanan} Perjalanan`;
+      } else if (kategori === "tingkat_hunian") {
+        nilaiInfo = `B: ${top5[0].hotel_berbintang}%, NB: ${top5[0].hotel_non_berbintang}%`;
+      }
+
+      document.getElementById("card-nilai").querySelector(".value").textContent = nilaiInfo;
+
+      const warna = {
+        akomodasi: 'black',
+        kamar: '#D2B48C',
+        tempat_tidur: '#A0522D',
+        perjalanan: '#8B4513',
+        bintang: '#DAA520',
+        non_bintang: '#F4A460'
+      };
+
+      let datasets = [];
+      if (kategori.includes("hotel")) {
+        const stackLabel = kategori === 'hotel_bintang' ? 'Bintang' : 'Non-Bintang';
+        datasets = [
+          { label: 'Akomodasi', data: top5.map(i => i.akomodasi), backgroundColor: warna.akomodasi, stack: stackLabel },
+          { label: 'Kamar', data: top5.map(i => i.kamar), backgroundColor: warna.kamar, stack: stackLabel },
+          { label: 'Tempat Tidur', data: top5.map(i => i.tempat_tidur), backgroundColor: warna.tempat_tidur, stack: stackLabel }
+        ];
+      } else if (kategori === 'perjalanan_nusantara') {
+        datasets = [{ label: 'Jumlah Perjalanan', data: top5.map(i => i.jumlah_perjalanan), backgroundColor: warna.perjalanan }];
+      } else if (kategori === 'tingkat_hunian') {
+        datasets = [
+          { label: 'Hotel Berbintang', data: top5.map(i => i.hotel_berbintang), backgroundColor: warna.bintang },
+          { label: 'Hotel Non-Bintang', data: top5.map(i => i.hotel_non_berbintang), backgroundColor: warna.non_bintang }
+        ];
+      }
+
+      if (barChart) barChart.destroy();
+
+      barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top5.map(i => i.provinsi),
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true, beginAtZero: true }
+          },
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    }
+
+    let fullTableData = [];
+    let currentPage = 1;
+    const rowsPerPage = 5;
+
+    function updateTable(data, kategori) {
+      fullTableData = [];
+      currentPage = 1;
+      const tahun = document.getElementById("tahun").value;
+      let headers = ['Provinsi'];
+
+      if (kategori.includes("hotel")) {
+        headers.push('Akomodasi', 'Kamar', 'Tempat Tidur', 'Tahun');
+        fullTableData = data.map(d => [
+          d.provinsi,
+          d.akomodasi || '-',
+          d.kamar || '-',
+          d.tempat_tidur || '-',
+          d.tahun || tahun
+        ]);
+      } else if (kategori === "perjalanan_nusantara") {
+        headers.push('Jumlah Perjalanan', 'Tahun');
+        fullTableData = data.map(d => [
+          d.provinsi,
+          d.jumlah_perjalanan || '-',
+          d.tahun || tahun
+        ]);
+      } else if (kategori === "tingkat_hunian") {
+        headers.push('Hotel Berbintang (%)', 'Hotel Non-Bintang (%)', 'Tahun');
+        fullTableData = data.map(d => [
+          d.provinsi,
+          d.hotel_berbintang || '-',
+          d.hotel_non_berbintang || '-',
+          d.tahun || tahun
+        ]);
+      }
+
+      renderTable(headers);
+      renderPagination();
+    }
+
+    function renderTableHeadersAndData() {
+      const kategori = document.getElementById("kategori").value;
+      const tahun = document.getElementById("tahun").value;
+      let headers = ['Provinsi'];
+
+      if (kategori.includes("hotel")) {
+        headers.push('Akomodasi', 'Kamar', 'Tempat Tidur', 'Tahun');
+      } else if (kategori === "perjalanan_nusantara") {
+        headers.push('Jumlah Perjalanan', 'Tahun');
+      } else if (kategori === "tingkat_hunian") {
+        headers.push('Hotel Berbintang (%)', 'Hotel Non-Bintang (%)', 'Tahun');
+      }
+
+      renderTable(headers);
+      renderPagination();
+    }
+
+
+    // Render isi tabel sesuai halaman saat ini
+    function renderTable(headers) {
+    const tableHead = document.querySelector("#dataTable thead");
+    const tableBody = document.querySelector("#dataTable tbody");
+
+    tableHead.innerHTML = '';
+    tableBody.innerHTML = '';
+
+    // Buat header
+    const headRow = document.createElement('tr');
+    headers.forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        headRow.appendChild(th);
+    });
+    tableHead.appendChild(headRow);
+
+    // Data per halaman
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageData = fullTableData.slice(start, end);
+
+    // Buat baris data
+    pageData.forEach(row => {
+        const tr = document.createElement('tr');
+        row.forEach(cell => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+    });
+    }
+
+    // Render tombol pagination
+    function renderPagination() {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = '';
+
+    const totalPages = Math.min(10, Math.ceil(fullTableData.length / rowsPerPage));
+
+    // Tombol Previous
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "Previous";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        currentPage--;
+        renderTableHeadersAndData();
+    };
+    pagination.appendChild(prevBtn);
+
+    // Tombol angka halaman
+    for (let i = 1; i <= totalPages; i++) {
+        const pageBtn = document.createElement("button");
+        pageBtn.textContent = i;
+        if (i === currentPage) pageBtn.classList.add("active");
+        pageBtn.onclick = () => {
+        currentPage = i;
+        renderTableHeadersAndData();
+        };
+        pagination.appendChild(pageBtn);
+    }
+
+    // Tombol Next
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        currentPage++;
+        renderTableHeadersAndData();
+    };
+    pagination.appendChild(nextBtn);
+    }
+
+    // Render ulang tabel dan pagination saat ganti halaman
+    function renderTableHeadersAndData() {
+    const kategori = document.getElementById("kategori").value;
+    let headers = ['Provinsi'];
+    if (kategori.includes("hotel")) {
+        headers.push('Akomodasi', 'Kamar', 'Tempat Tidur');
+    } else if (kategori === "perjalanan_nusantara") {
+        headers.push('Jumlah Perjalanan');
+    } else if (kategori === "tingkat_hunian") {
+        headers.push('Hotel Berbintang (%)', 'Hotel Non-Bintang (%)');
+    }
+    renderTable(headers);
+    renderPagination();
+    }
+
+
+    updateMap();
+  </script>
+</body>
+</html>
