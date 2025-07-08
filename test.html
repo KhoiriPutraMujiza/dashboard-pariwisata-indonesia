@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Peta GeoJSON Sumatera Barat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    #map {
+      height: 60vh;
+      width: 50%;
+      margin-left: 40px;
+      margin-top: 115px;
+      border-radius: 5px;
+    }
+
+    .info {
+      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      font: 14px/16px Arial, Helvetica, sans-serif;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      min-width: 180px;
+    }
+
+    #back-button {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 6px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      font-family: Arial;
+      cursor: pointer;
+      display: none;
+    }
+
+    #data-toggle {
+      position: absolute;
+      top: 120px;
+      right: 250px;
+      z-index: 1000;
+      background: white;
+      padding: 6px 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      font-family: Arial;
+      width: 29%;
+      text-align: center;
+    }
+
+    .legend {
+      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      font: 12px/14px Arial, Helvetica, sans-serif;
+      position: absolute;
+      bottom: 20px;
+      right: 10px;
+      z-index: 1000;
+    }
+
+    .legend h4 {
+      margin: 0 0 5px;
+      color: #555;
+    }
+
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+    }
+
+    .legend div {
+      clear: both;
+    }
+
+    #title {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1001;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font: bold 20px Arial, sans-serif;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+
+    #chart-container {
+      position: absolute;
+      top: 160px;
+      right: 100px;
+      width: 40%;
+      height: 54vh;
+      background: white;
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      display: block;
+      /* pastikan langsung tampil */
+    }
+
+    #total-data-container {
+      position: absolute;
+      top: 80%;
+      left: 50px;
+      width: 20%;
+      background: #f8f8f8;
+      padding: 10px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      display: none;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: small;
+    }
+
+    #highest-data-container {
+      position: absolute;
+      top: 80%;
+      left: 400px;
+      width: 20%;
+      background: #f8f8f8;
+      padding: 10px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+      border-radius: 5px;
+      display: none;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: small;
+    }
+
+    #chart-toggle {
+      display: none;
+      /* atau hapus elemen ini dari HTML jika tidak dibutuhkan */
+    }
+
+    #chart-toggle {
+      display: none;
+    }
+
+    /* Update style untuk tabel */
+    /* Ubah ini */
+    #table-container {
+      position: absolute;
+      top: calc(160px + 54vh + 20px);
+      /* posisi grafik (160px) + tinggi grafik (54vh) + jarak */
+      right: 100px;
+      /* samakan dengan chart-container agar sejajar */
+      width: 40%;
+      background: white;
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
+      font-family: Arial, sans-serif;
+      max-height: 45vh;
+    }
+
+
+    #data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    #data-table th,
+    #data-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    #data-table th {
+      background-color: #A53860;
+      color: white;
+      position: sticky;
+      top: 0;
+    }
+
+    #data-table tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+
+    #data-table tr:hover {
+      background-color: #f0e6eb;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <div id="title">Indikasi Luas Kebakaran di Sumatera Barat</div>
+  <div id="back-button">⬅ Kembali ke Kabupaten</div>
+  <div id="data-toggle">
+    Tampilkan:
+    <select id="data-type">
+      <option value="kebakaran">INDIKASI LUAS KEBAKARAN</option>
+    </select>
+    Tahun:
+    <select id="tahun">
+      <option value="2020">2020</option>
+      <option value="2021">2021</option>
+      <option value="2022">2022</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+    </select>
+  </div>
+  <div id="table-container">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>Kabupaten/Kota</th>
+          <th>2020 (ha)</th>
+          <th>2021 (ha)</th>
+          <th>2022 (ha)</th>
+          <th>2023 (ha)</th>
+          <th>2024 (ha)</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Data akan diisi oleh JavaScript -->
+      </tbody>
+    </table>
+  </div>
+  <!-- <div id="chart-toggle" onclick="toggleChart()">▼ Tampilkan Grafik</div> -->
+  <div id="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+  <div id="total-data-container">
+    <canvas></canvas>
+  </div>
+  <div id="highest-data-container">
+    <canvas></canvas>
+  </div>
+
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+  <script>
+    let map = L.map('map').setView([-0.947, 100.369], 9);
+    let chart = null;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let allData = [];
+    let kebakaranData = [];
+
+    let kabupatenLayer = null, kecamatanLayer = null, labelLayer = null;
+    let currentHoveredLayer = null;
+    let currentDataType = 'kebakaran';
+    let currentYear = '2020';
+
+    const backButton = document.getElementById('back-button');
+    const dataTypeSelect = document.getElementById('data-type');
+    const tahunSelect = document.getElementById('tahun');
+    const chartContainer = document.getElementById('chart-container');
+    const chartToggle = document.getElementById('chart-toggle');
+
+    const colorScale = ['#EF88AD', '#A53860', '#85193C', '#670D2F', '#3A0519']; // terang → gelap
+
+    function toggleChart() {
+      if (chartContainer.style.display === 'none') {
+        chartContainer.style.display = 'block';
+        chartToggle.innerHTML = '▲ Sembunyikan Grafik';
+        updateChart();
+      } else {
+        chartContainer.style.display = 'none';
+        chartToggle.innerHTML = '▼ Tampilkan Grafik';
+      }
+    }
+
+    function updateTotalData() {
+      const totalContainer = document.getElementById('total-data-container');
+      const totalRow = kebakaranData.find(d => d.KabKota.toLowerCase() === 'total');
+
+      if (totalRow && totalRow[currentYear]) {
+        const value = parseFloat(totalRow[currentYear]);
+        totalContainer.style.display = 'block';
+        totalContainer.innerHTML = `
+      <h4 style="margin-top: 0; color: #A53860;">Total Luas Kebakaran di Sumatera Barat (${currentYear})</h4>
+      <p style="margin: 5px 0; font-size: 16px;"><b>${value.toLocaleString('id-ID')} ha</b></p>
+    `;
+      } else {
+        totalContainer.style.display = 'none';
+      }
+    }
+
+    function updateHighestData() {
+      const highestContainer = document.getElementById('highest-data-container');
+
+      const filtered = kebakaranData.filter(d => d.KabKota.toLowerCase() !== 'total' && d[currentYear]);
+      if (filtered.length === 0) {
+        highestContainer.style.display = 'none';
+        return;
+      }
+
+      const highest = filtered.reduce((max, curr) => {
+        const currValue = parseFloat(curr[currentYear]);
+        return currValue > parseFloat(max[currentYear]) ? curr : max;
+      });
+
+      const value = parseFloat(highest[currentYear]);
+      highestContainer.style.display = 'block';
+      highestContainer.innerHTML = `
+    <h4 style="margin-top: 0; color: #A53860;">Wilayah dengan Kebakaran Terluas (${currentYear})</h4>
+    <p style="margin: 5px 0; font-size: 16px;"><b>${highest.KabKota}</b>: ${value.toLocaleString('id-ID')} ha</p>
+  `;
+    }
+
+
+
+    function getColor(value, scale) {
+      if (value === null || value === undefined) return '#ccc';
+      for (let i = 0; i < scale.length; i++) {
+        if (value <= scale[i]) return colorScale[i];
+      }
+      return colorScale[colorScale.length - 1];
+    }
+
+    function getColorScale(dataList) {
+      const values = dataList
+        .map(d => parseFloat(d[currentYear]))
+        .filter(v => !isNaN(v));
+      if (values.length === 0) return [0, 1, 2, 3, 4]; // default scale
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const range = max - min;
+      const step = range / 5;
+      return Array.from({ length: 5 }, (_, i) => min + step * (i + 1));
+    }
+
+    function updateLegend() {
+      const legend = L.control({ position: 'bottomright' });
+      legend.onAdd = function () {
+        const div = L.DomUtil.create('div', 'legend');
+        const scale = getColorScale(getCurrentDataArray());
+        const { label } = getDataByDistrict("");
+
+        div.innerHTML = `
+          <h4>${label}</h4>
+          <div><i style="background:${colorScale[0]}"></i> < ${scale[0].toLocaleString('id-ID')}</div>
+          <div><i style="background:${colorScale[1]}"></i> ${scale[0].toLocaleString('id-ID')} - ${scale[1].toLocaleString('id-ID')}</div>
+          <div><i style="background:${colorScale[2]}"></i> ${scale[1].toLocaleString('id-ID')} - ${scale[2].toLocaleString('id-ID')}</div>
+          <div><i style="background:${colorScale[3]}"></i> ${scale[2].toLocaleString('id-ID')} - ${scale[3].toLocaleString('id-ID')}</div>
+          <div><i style="background:${colorScale[4]}"></i> > ${scale[3].toLocaleString('id-ID')}</div>
+        `;
+        return div;
+      };
+
+      // Hapus legenda sebelumnya jika ada
+      if (window.currentLegend) {
+        map.removeControl(window.currentLegend);
+      }
+
+      window.currentLegend = legend;
+      legend.addTo(map);
+    }
+
+    async function fetchData() {
+      try {
+        const responses = await Promise.all([
+          fetch('http://localhost:3000/api/kebakaran')
+        ]);
+        [kebakaranData] = await Promise.all(responses.map(r => r.json()));
+
+        if (chartContainer.style.display !== 'none') {
+          updateChart();
+        }
+        updateTotalData();
+        updateHighestData(); // Tambahkan ini
+      } catch (error) {
+        console.error('Gagal memuat data:', error);
+      }
+    }
+
+
+
+    function getDataByDistrict(name) {
+      const tahun = currentYear;
+      const nameLC = name.toLowerCase();
+      let dataMap = {
+        'kebakaran': [kebakaranData, 'Indikasi Luas Kebakaran', 'ha']
+      };
+      const [dataset, label, unit] = dataMap[currentDataType] || [];
+      const found = dataset.find(d => d.KabKota.toLowerCase() === nameLC);
+      const value = found ? parseFloat(found[tahun]) : null;
+      return { value, label: `${label} (${tahun})`, unit };
+    }
+
+    const info = L.control();
+    info.onAdd = function () {
+      this._div = L.DomUtil.create('div', 'info');
+      this.update();
+      return this._div;
+    };
+    info.update = function (props) {
+      if (props) {
+        const name = props.district || props.sub_district;
+        const { value, unit, label } = getDataByDistrict(name);
+        this._div.innerHTML = `<b>${name}</b><br>` +
+          (value !== null ? `${label}: ${value.toLocaleString('id-ID')} ${unit}` : 'Data tidak tersedia');
+      } else {
+        this._div.innerHTML = 'Arahkan ke wilayah';
+      }
+    };
+    info.addTo(map);
+
+    fetch('http://localhost:3000/api/geojson-data')
+      .then(res => res.json())
+      .then(data => {
+        allData = data;
+        window.sumateraBaratGeoJSON = {
+          type: 'FeatureCollection',
+          features: data.map(item => ({
+            type: 'Feature',
+            properties: {
+              district: item.district,
+              sub_district: item.sub_district
+            },
+            geometry: item.geojson
+          }))
+        };
+        fetchData().then(() => {
+          showKabupatenLayer();
+          updateLegend();
+        });
+      });
+
+    function showKabupatenLayer() {
+      if (kecamatanLayer) map.removeLayer(kecamatanLayer);
+      if (labelLayer) map.removeLayer(labelLayer);
+      if (kabupatenLayer) map.removeLayer(kabupatenLayer);
+      backButton.style.display = 'none';
+
+      const grouped = {};
+      sumateraBaratGeoJSON.features.forEach(f => {
+        const kab = f.properties.district;
+        if (!grouped[kab]) grouped[kab] = [];
+        grouped[kab].push(turf.clone(f));
+      });
+
+      const kabFeatures = [];
+      for (const [kab, features] of Object.entries(grouped)) {
+        let merged = features[0];
+        for (let i = 1; i < features.length; i++) {
+          try { merged = turf.union(merged, features[i]); }
+          catch (err) { console.warn(`Union gagal untuk ${kab}`, err); }
+        }
+        merged.properties = { district: kab };
+        kabFeatures.push(merged);
+      }
+
+      const scale = getColorScale(getCurrentDataArray());
+
+      kabupatenLayer = L.geoJSON(kabFeatures, {
+        style: feature => {
+          const { value } = getDataByDistrict(feature.properties.district);
+          return {
+            weight: 1,
+            color: '#fff',
+            fillColor: getColor(value, scale),
+            fillOpacity: 0.7
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          layer.on({
+            mouseover: e => {
+              if (currentHoveredLayer) kabupatenLayer.resetStyle(currentHoveredLayer);
+              e.target.setStyle({ weight: 3, color: '#333', fillOpacity: 0.9 });
+              currentHoveredLayer = e.target;
+              info.update(feature.properties);
+            },
+            mouseout: e => {
+              kabupatenLayer.resetStyle(e.target);
+              currentHoveredLayer = null;
+              info.update();
+            },
+            click: () => showKecamatan(feature.properties.district)
+          });
+          layer.bindPopup(`<b>Kabupaten/Kota:</b> ${feature.properties.district}`);
+        }
+      }).addTo(map);
+
+      map.fitBounds(kabupatenLayer.getBounds());
+      updateLegend();
+    }
+
+    function getCurrentDataArray() {
+      const datasets = {
+        'kebakaran': kebakaranData
+      };
+      return datasets[currentDataType] || [];
+    }
+
+    function showKecamatan(districtName) {
+      if (kabupatenLayer) map.removeLayer(kabupatenLayer);
+      if (kecamatanLayer) map.removeLayer(kecamatanLayer);
+      if (labelLayer) map.removeLayer(labelLayer);
+
+      const kecFeatures = sumateraBaratGeoJSON.features.filter(f => f.properties.district === districtName);
+      const scale = getColorScale(getCurrentDataArray());
+
+      kecamatanLayer = L.geoJSON(kecFeatures, {
+        style: feature => {
+          const { value } = getDataByDistrict(feature.properties.sub_district);
+          return {
+            weight: 1,
+            color: '#fff',
+            fillColor: getColor(value, scale),
+            fillOpacity: 0.7
+          };
+        },
+        onEachFeature: (feature, layer) => {
+          layer.on({
+            mouseover: e => {
+              if (currentHoveredLayer) kecamatanLayer.resetStyle(currentHoveredLayer);
+              e.target.setStyle({ weight: 3, color: '#333', fillOpacity: 0.9 });
+              currentHoveredLayer = e.target;
+              info.update(feature.properties);
+            },
+            mouseout: e => {
+              kecamatanLayer.resetStyle(e.target);
+              currentHoveredLayer = null;
+              info.update();
+            }
+          });
+          layer.bindPopup(`<b>Kecamatan:</b> ${feature.properties.sub_district}<br><b>Kabupaten/Kota:</b> ${feature.properties.district}`);
+        }
+      }).addTo(map);
+
+      labelLayer = L.layerGroup();
+      kecFeatures.forEach(f => {
+        const center = turf.centerOfMass(f).geometry.coordinates;
+        const label = L.marker([center[1], center[0]], {
+          icon: L.divIcon({
+            className: 'label',
+            html: `<span style="font-size:12px;font-weight:bold;color:#222;background:white;padding:2px 4px;border-radius:3px;">${f.properties.sub_district}</span>`,
+            iconSize: [100, 20],
+            iconAnchor: [50, 10]
+          })
+        });
+        labelLayer.addLayer(label);
+      });
+      labelLayer.addTo(map);
+
+      map.fitBounds(kecamatanLayer.getBounds());
+      backButton.style.display = 'block';
+      updateLegend();
+    }
+
+    backButton.onclick = () => {
+      showKabupatenLayer();
+      info.update();
+    };
+
+    dataTypeSelect.addEventListener('change', e => {
+      currentDataType = e.target.value;
+      showKabupatenLayer();
+      updateLegend();
+      if (currentHoveredLayer) {
+        info.update(currentHoveredLayer.feature.properties);
+      }
+      if (chartContainer.style.display !== 'none') {
+        updateChart();
+      }
+    });
+
+    tahunSelect.addEventListener('change', e => {
+      currentYear = e.target.value;
+      showKabupatenLayer();
+      updateLegend();
+      if (currentHoveredLayer) {
+        info.update(currentHoveredLayer.feature.properties);
+      }
+      if (chartContainer.style.display !== 'none') {
+        updateChart();
+      }
+      updateTotalData(); // tambahkan ini
+      updateHighestData();
+    });
+
+    function zoomToArea(areaName) {
+      // Jika di level kabupaten, zoom ke kabupaten tersebut
+      if (kabupatenLayer) {
+        const layer = kabupatenLayer.getLayers().find(l =>
+          l.feature.properties.district === areaName
+        );
+        if (layer) {
+          map.fitBounds(layer.getBounds());
+          layer.fire('click'); // Trigger click untuk menampilkan kecamatan jika ada
+        }
+      }
+      // Jika di level kecamatan, kembali ke kabupaten lalu zoom
+      else if (kecamatanLayer) {
+        showKabupatenLayer();
+        setTimeout(() => {
+          const layer = kabupatenLayer.getLayers().find(l =>
+            l.feature.properties.district === areaName
+          );
+          if (layer) {
+            map.fitBounds(layer.getBounds());
+          }
+        }, 100);
+      }
+    }
+
+
+
+  </script>
+</body>
+
+</html>
